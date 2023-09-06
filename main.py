@@ -12,6 +12,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class repo_backup:
+    """
+    A class to represent a GitHub repository.
+    """
     def __init__(self, name: str = ''):
         self.commitHash = None
         self.lastPull = None
@@ -22,6 +25,9 @@ class repo_backup:
 
     @property
     def dict(self):
+        """
+        Returns the repo as a dictionary.
+        """
         return {
             "clone_url": self.cloneUrl,
             "commitHash": self.commitHash,
@@ -31,6 +37,9 @@ class repo_backup:
         }
 
     def backup(self, root_dir: str, target: str = '.', token: str = ''):
+        """
+        Backs up the repo.
+        """
         chdir(root_dir  )
         if os.path.isdir(("{}/" + self.name).format(target)):
             print("Pulling {}...".format(self.name), end="")
@@ -56,6 +65,9 @@ class repo_backup:
         chdir("..")
 
 class backupdata:
+    """
+    A class to represent the repositories to backup.
+    """
     def __init__(self, user: str = '', org: str = '', token: str = '', target: str = '', root_dir: str = os.getcwd()):
         self.github_user = user
         self.github_org = org
@@ -65,6 +77,9 @@ class backupdata:
         self.root_dir = root_dir
 
     def backup(self):
+        """
+        Backs up the repositories.
+        """
         for repo in self.repos:
             self.repos[repo].backup(self.root_dir, self.target, self.github_token)
 
