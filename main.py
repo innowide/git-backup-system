@@ -22,6 +22,7 @@ class repo_backup:
         self.error = None
         self.cloneUrl = None
         self.name = name
+        self.lastCommit = None
 
     @property
     def dict(self):
@@ -57,10 +58,15 @@ class repo_backup:
             chdir(target + "/" + self.name)
         print('Done')
 
-        self.commitHash = getoutput("git rev-parse HEAD")
+        new_hash = getoutput("git rev-parse HEAD")
         self.lastPull = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         print("Repo last pull:", self.lastPull)
-        print("Commit hash:", self.commitHash, end="\n\n")
+        if new_hash != self.commitHash:
+            print("Commit hash changed from {} to {}".format(self.commitHash, new_hash))
+            self.commitHash = new_hash
+            self.lastCommit = getoutput("git log -1 --format=%cd")
+        else:
+            print("Commit hash:", self.commitHash, end="\n\n")
 
 class backupdata:
     """
@@ -80,6 +86,30 @@ class backupdata:
         """
         for repo in self.repos:
             self.repos[repo].backup(self.root_dir, self.target, self.github_token)
+    
+    def loadJson(self, path: str = 'repos.json'):
+        """
+        Loads the backup data from a JSON file.
+        """
+        print("Loading backup data from {}...".format(path))
+        with open(path, 'r') as f:
+            data = json.load(f)
+            for repo in data['repos']:
+                self.repos[repo] = repo_backup(repo)
+                self.repos[repo].cloneUrl = data['repos'][repo]['clone_url']
+                self.repos[repo].commitHash = data['repos'][repo]['commitHash']
+                self.repos[repo].lastPull = data['repos'][repo]['lastPull']
+                self.repos[repo].hasError = data['repos'][repo]['hasError']
+                self.repos[repo].error = data['repos'][repo]['error']
+                self.repos[repo].lastCommit = data['repos'][repo]['lastCommit']
+    @property
+    def json(self):
+        """
+        Returns the backup data as a JSON string.
+        """
+        return json.dumps({
+            "repos": {repo: self.repos[repo].dict for repo in self.repos}
+        })
 
 user = os.getenv("GITHUB_USER")
 org = os.getenv("GITHUB_ORG")
