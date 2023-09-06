@@ -40,12 +40,11 @@ class repo_backup:
         """
         Backs up the repo.
         """
-        chdir(root_dir  )
-        if os.path.isdir(("{}/" + self.name).format(target)):
+        chdir(root_dir)
+        if os.path.isdir(target + "/" + self.name):
             print("Pulling {}...".format(self.name), end="")
-            chdir(("{}/" + self.name).format(target))
+            chdir(target + "/" + self.name)
             getoutput("git pull")
-            chdir("..")
         else:
             print("Cloning {}...".format(self.name), end="")
             getoutput("git clone {} {}/{}".format(
@@ -55,14 +54,13 @@ class repo_backup:
                 target,
                 self.name
             ))
+            chdir(target + "/" + self.name)
         print('Done')
 
-        chdir(("{}/" + self.name).format(target))
         self.commitHash = getoutput("git rev-parse HEAD")
         self.lastPull = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         print("Repo last pull:", self.lastPull)
         print("Commit hash:", self.commitHash, end="\n\n")
-        chdir("..")
 
 class backupdata:
     """
