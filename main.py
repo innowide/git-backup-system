@@ -34,6 +34,7 @@ class repo_backup:
             "commitHash": self.commitHash,
             "lastPull": self.lastPull,
             "hasError": self.hasError,
+            "lastCommit": self.lastCommit,
             "error": self.error
         }
 
@@ -86,6 +87,7 @@ class backupdata:
         """
         for repo in self.repos:
             self.repos[repo].backup(self.root_dir, self.target, self.github_token)
+        chdir(self.root_dir)
     
     def loadJson(self, path: str = 'repos.json'):
         """
@@ -96,12 +98,12 @@ class backupdata:
             data = json.load(f)
             for repo in data['repos']:
                 self.repos[repo] = repo_backup(repo)
-                self.repos[repo].cloneUrl = data['repos'][repo]['clone_url']
-                self.repos[repo].commitHash = data['repos'][repo]['commitHash']
-                self.repos[repo].lastPull = data['repos'][repo]['lastPull']
-                self.repos[repo].hasError = data['repos'][repo]['hasError']
-                self.repos[repo].error = data['repos'][repo]['error']
-                self.repos[repo].lastCommit = data['repos'][repo]['lastCommit']
+                self.repos[repo].cloneUrl = data['repos'][repo].get('clone_url', None)
+                self.repos[repo].commitHash = data['repos'][repo].get('commitHash', None)
+                self.repos[repo].lastPull = data['repos'][repo].get('lastPull', None)
+                self.repos[repo].hasError = data['repos'][repo].get('hasError', None)
+                self.repos[repo].error = data['repos'][repo].get('error', None)
+                self.repos[repo].lastCommit = data['repos'][repo].get('lastCommit', None)
     @property
     def json(self):
         """
@@ -119,8 +121,14 @@ target = os.getenv("TARGET")
 res = requests.get("https://api.github.com/orgs/{}/repos".format(org), auth=(user, token))
 repos = backupdata(user, org, token, target)
 
+
+repos.loadJson()
+
 for repo in res.json():
     repos.repos[repo['name']] = repo_backup(repo['name'])
     repos.repos[repo['name']].cloneUrl = repo['clone_url']
 
 repos.backup()
+
+with open("repos.json", 'w+') as f:
+    f.write(repos.json)
