@@ -64,7 +64,7 @@ class repo_backup:
         print("Repo last pull:", self.lastPull)
         if new_hash != self.commitHash:
             print("Commit hash changed from {} to {}".format(self.commitHash, new_hash))
-            self.commitHash = new_hash
+            self.commitHash = new_hash + ""
             self.lastCommit = getoutput("git log -1 --format=%cd")
         else:
             print("Commit hash:", self.commitHash, end="\n\n")
@@ -96,14 +96,15 @@ class backupdata:
         print("Loading backup data from {}...".format(path))
         with open(path, 'r') as f:
             data = json.load(f)
+            print(data)
             for repo in data['repos']:
                 self.repos[repo] = repo_backup(repo)
-                self.repos[repo].cloneUrl = data['repos'][repo].get('clone_url', None)
-                self.repos[repo].commitHash = data['repos'][repo].get('commitHash', None)
-                self.repos[repo].lastPull = data['repos'][repo].get('lastPull', None)
-                self.repos[repo].hasError = data['repos'][repo].get('hasError', None)
-                self.repos[repo].error = data['repos'][repo].get('error', None)
-                self.repos[repo].lastCommit = data['repos'][repo].get('lastCommit', None)
+                self.repos[repo].cloneUrl = data['repos'][repo].get('clone_url')
+                self.repos[repo].commitHash = data['repos'][repo].get('commitHash', "HEYYYYYYY")
+                self.repos[repo].lastPull = data['repos'][repo].get('lastPull')
+                self.repos[repo].hasError = data['repos'][repo].get('hasError')
+                self.repos[repo].error = data['repos'][repo].get('error')
+                self.repos[repo].lastCommit = data['repos'][repo].get('lastCommit')
     @property
     def json(self):
         """
@@ -121,12 +122,15 @@ target = os.getenv("TARGET")
 res = requests.get("https://api.github.com/orgs/{}/repos".format(org), auth=(user, token))
 repos = backupdata(user, org, token, target)
 
-
-repos.loadJson()
+try:
+    repos.loadJson()
+except:
+    pass
 
 for repo in res.json():
-    repos.repos[repo['name']] = repo_backup(repo['name'])
-    repos.repos[repo['name']].cloneUrl = repo['clone_url']
+    if repo['name'] not in repos.repos:
+        repos.repos[repo['name']] = repo_backup(repo['name'])
+        repos.repos[repo['name']].cloneUrl = repo['clone_url']
 
 repos.backup()
 
