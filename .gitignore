@@ -1,5 +1,5 @@
-.env
-repos
 .vscode
-repos.json
-repos.conf
+src/.env
+src/repos
+src/repos.json
+src/repos.conf
