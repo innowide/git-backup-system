@@ -1,9 +1,5 @@
 #!/bin/env python3
-import github3
-import requests
-import shutil
 import os
-from os import getcwd, chdir
 from subprocess import getoutput
 import json
 from datetime import datetime
@@ -42,10 +38,10 @@ class repo_backup:
         """
         Backs up the repo.
         """
-        chdir(root_dir)
+        os.chdir(root_dir)
         if os.path.isdir(target + "/" + self.name):
             print("\nPulling {}...".format(self.name), end="")
-            chdir(target + "/" + self.name)
+            os.chdir(target + "/" + self.name)
             getoutput("git pull")
         else:
             print("Cloning {}...".format(self.name), end="")
@@ -56,7 +52,7 @@ class repo_backup:
                 target,
                 self.name
             ))
-            chdir(target + "/" + self.name)
+            os.chdir(target + "/" + self.name)
         print('Done')
 
         new_hash = getoutput("git rev-parse HEAD")
@@ -87,7 +83,7 @@ class backupdata:
         """
         for repo in self.repos:
             self.repos[repo].backup(self.root_dir, self.target, self.github_token)
-        chdir(self.root_dir)
+        os.chdir(self.root_dir)
     
     def loadJson(self, path: str = 'repos.json'):
         """
