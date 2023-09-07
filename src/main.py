@@ -52,6 +52,7 @@ class repo_backup:
                 )),
                 self.name
             ))
+            print("Location:", os.getcwd())
             os.chdir(self.name)
         print('Done')
 
@@ -81,9 +82,11 @@ class backupdata:
         """
         Backs up the repositories.
         """
+        if not os.path.isdir(self.target):
+            os.mkdir(self.target)
         for repo in self.repos:
             self.repos[repo].backup(self.root_dir, self.target, self.github_token)
-        os.chdir(self.root_dir)
+        os.chdir(self.target)
     
     def loadJson(self, path: str = 'repos.json'):
         """
@@ -119,10 +122,10 @@ if __name__ == "__main__":
     
     repos = backupdata(user, org, token, target)
     
-    try:
-        repos.loadJson()
-    except:
-        print("No backup data found. Creating new backup data at the end of program...")
+    # try:
+    #     repos.loadJson()
+    # except:
+    #     print("No backup data found. Creating new backup data at the end of program...")
     
     if os.path.exists("repos.conf"):
         f = open("repos.conf", 'r')
@@ -140,8 +143,11 @@ if __name__ == "__main__":
             repos.repos[repo[0]].cloneUrl = repo[1]
     
     now = datetime.now()
-    repos.backup()
+    try:
+        repos.backup()
+    except:
+        pass
     print("Backup finished in {} seconds.".format((datetime.now() - now).seconds))
     
-    with open("repos.json", 'w+') as f:
-        f.write(repos.json)
+    # with open(target + "/repos.json", 'w+') as f:
+    #     f.write(repos.json)
