@@ -44,7 +44,7 @@ class repo_backup:
         """
         chdir(root_dir)
         if os.path.isdir(target + "/" + self.name):
-            print("Pulling {}...".format(self.name), end="")
+            print("\nPulling {}...".format(self.name), end="")
             chdir(target + "/" + self.name)
             getoutput("git pull")
         else:
@@ -67,7 +67,7 @@ class repo_backup:
             self.commitHash = new_hash + ""
             self.lastCommit = getoutput("git log -1 --format=%cd")
         else:
-            print("Commit hash:", self.commitHash, end="\n\n")
+            print("Commit hash:", self.commitHash)
 
 class backupdata:
     """
@@ -117,18 +117,27 @@ user = os.getenv("GITHUB_USER")
 org = os.getenv("GITHUB_ORG")
 token = os.getenv("GITHUB_TOKEN")
 target = os.getenv("TARGET")
-with open("repos.conf", 'r') as f:
-    repos_conf = f.readlines()
+
+
 
 repos = backupdata(user, org, token, target)
 
 try:
     repos.loadJson()
 except:
-    pass
+    print("No backup data found. Creating new backup data at the end of program...")
+
+if os.path.exists("repos.conf"):
+    f = open("repos.conf", 'r')
+    repos_conf = f.readlines()
+    f.close()
+else:
+    raise Exception("No repos config found!")
 
 for repo in repos_conf:
     repo = repo.split(' ')
+    if len(repo) != 2:
+        raise Exception("Invalid repos config!")
     if repo[0] not in repos.repos:
         repos.repos[repo[0]] = repo_backup(repo[0])
         repos.repos[repo[0]].cloneUrl = repo[1]
