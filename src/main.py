@@ -45,14 +45,14 @@ class repo_backup:
             getoutput("git pull")
         else:
             print("Cloning {}...".format(self.name), end="")
-            getoutput("git clone {} {}/{}".format(
+            os.chdir(target)
+            getoutput("git clone {} {}".format(
                 self.cloneUrl.replace("https://", "https://{}@".format(
                     token
                 )),
-                target,
                 self.name
             ))
-            os.chdir(target + "/" + self.name)
+            os.chdir(self.name)
         print('Done')
 
         new_hash = getoutput("git rev-parse HEAD")
@@ -109,34 +109,39 @@ class backupdata:
             "repos": {repo: self.repos[repo].dict for repo in self.repos}
         })
 
-user = os.getenv("GITHUB_USER")
-org = os.getenv("GITHUB_ORG")
-token = os.getenv("GITHUB_TOKEN")
-target = os.getenv("TARGET")
 
-repos = backupdata(user, org, token, target)
 
-try:
-    repos.loadJson()
-except:
-    print("No backup data found. Creating new backup data at the end of program...")
-
-if os.path.exists("repos.conf"):
-    f = open("repos.conf", 'r')
-    repos_conf = f.readlines()
-    f.close()
-else:
-    raise Exception("No repos config found!")
-
-for repo in repos_conf:
-    repo = repo.split(' ')
-    if len(repo) != 2:
-        raise Exception("Invalid repos config!")
-    if repo[0] not in repos.repos:
-        repos.repos[repo[0]] = repo_backup(repo[0])
-        repos.repos[repo[0]].cloneUrl = repo[1]
-
-repos.backup()
-
-with open("repos.json", 'w+') as f:
-    f.write(repos.json)
+if __name__ == "__main__":
+    user = os.getenv("GITHUB_USER")
+    org = os.getenv("GITHUB_ORG")
+    token = os.getenv("GITHUB_TOKEN")
+    target = os.getenv("TARGET")
+    
+    repos = backupdata(user, org, token, target)
+    
+    try:
+        repos.loadJson()
+    except:
+        print("No backup data found. Creating new backup data at the end of program...")
+    
+    if os.path.exists("repos.conf"):
+        f = open("repos.conf", 'r')
+        repos_conf = f.readlines()
+        f.close()
+    else:
+        raise Exception("No repos config found!")
+    
+    for repo in repos_conf:
+        repo = repo.split(' ')
+        if len(repo) != 2:
+            raise Exception("Invalid repos config!")
+        if repo[0] not in repos.repos:
+            repos.repos[repo[0]] = repo_backup(repo[0])
+            repos.repos[repo[0]].cloneUrl = repo[1]
+    
+    now = datetime.now()
+    repos.backup()
+    print("Backup finished in {} seconds.".format((datetime.now() - now).seconds))
+    
+    with open("repos.json", 'w+') as f:
+        f.write(repos.json)
