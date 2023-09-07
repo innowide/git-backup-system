@@ -96,7 +96,6 @@ class backupdata:
         print("Loading backup data from {}...".format(path))
         with open(path, 'r') as f:
             data = json.load(f)
-            print(data)
             for repo in data['repos']:
                 self.repos[repo] = repo_backup(repo)
                 self.repos[repo].cloneUrl = data['repos'][repo].get('clone_url')
@@ -118,8 +117,9 @@ user = os.getenv("GITHUB_USER")
 org = os.getenv("GITHUB_ORG")
 token = os.getenv("GITHUB_TOKEN")
 target = os.getenv("TARGET")
+with open("repos.conf", 'r') as f:
+    repos_conf = f.readlines()
 
-res = requests.get("https://api.github.com/orgs/{}/repos".format(org), auth=(user, token))
 repos = backupdata(user, org, token, target)
 
 try:
@@ -127,10 +127,11 @@ try:
 except:
     pass
 
-for repo in res.json():
-    if repo['name'] not in repos.repos:
-        repos.repos[repo['name']] = repo_backup(repo['name'])
-        repos.repos[repo['name']].cloneUrl = repo['clone_url']
+for repo in repos_conf:
+    repo = repo.split(' ')
+    if repo[0] not in repos.repos:
+        repos.repos[repo[0]] = repo_backup(repo[0])
+        repos.repos[repo[0]].cloneUrl = repo[1]
 
 repos.backup()
 
