@@ -3,3 +3,4 @@ src/.env
 src/repos
 src/repos.json
 src/repos.conf
+repos/repos.json
