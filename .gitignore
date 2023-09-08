@@ -4,3 +4,5 @@ src/repos
 src/repos.json
 src/repos.conf
 repos/repos.json
+repos/repos.conf
+repos/repos.conf~
