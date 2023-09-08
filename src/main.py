@@ -6,6 +6,7 @@ from datetime import datetime
 from datetime import timedelta
 from dotenv import load_dotenv
 import time
+import requests
 
 load_dotenv()
 
@@ -124,6 +125,25 @@ if __name__ == "__main__":
     org = os.getenv("GITHUB_ORG")
     token = os.getenv("GITHUB_TOKEN")
     target = os.getenv("TARGET")
+    slack_webhook = os.getenv("SLACK_WEBHOOK")
+
+    use_slack = False
+
+    if not slack_webhook:
+        use_slack = False
+        print("No Slack webhook found!")
+    else:
+        use_slack = True
+    if not user:
+        time.sleep(1) # Prevents the script from using too much CPU
+        raise Exception("No github user found!")
+    if not token:
+        time.sleep(1) # Prevents the script from using too much CPU
+        raise Exception("No github token found!")
+    if not user:
+        time.sleep(1) # Prevents the script from using too much CPU
+        raise Exception("No github user found!")
+
 
     while True:
         repos = backupdata(user, org, token, target) # Create/Recreate the backupdata object
@@ -143,13 +163,28 @@ if __name__ == "__main__":
                 repos.repos[repo[0]] = repo_backup(repo[0])
                 repos.repos[repo[0]].cloneUrl = repo[1].strip()
 
+        if use_slack: # Send slack startup message
+            print("Sending slack startup message...")
+            requests.post(slack_webhook, json={"text": "*Starting backup*..."})
+
         now = datetime.now() # Backup the repos
         repos.backup()
-        print("Backup finished in {} seconds.".format((datetime.now() - now).seconds))
+        time_elapsed = (datetime.now() - now).seconds
+        print("Backup finished in {} seconds.".format(time_elapsed))
 
         with open(target + "/repos.json", 'w+') as f: # Save the backup json data
             f.write(repos.json)
         print("Backup data saved to repos.json")
+
+        if use_slack: # Send slack backup end message
+            print("Sending slack checkup message...")
+            text = "*Backup finished in {} seconds.*\n".format(time_elapsed)
+            for repo in repos.repos:
+                if repos.repos[repo].hasError:
+                    text += "> :x: Error backing up {}: {}\n".format(repo, repos.repos[repo].error)
+                else:
+                    text += "> :white_check_mark: Successfully backed up {}.\n".format(repo)
+            requests.post(slack_webhook, json={"text": text})
 
         print("Next backup at midnight...") # Wait until midnight
         midnight = datetime(now.year, now.month, now.day, 0, 0, 0) + timedelta(days=1)

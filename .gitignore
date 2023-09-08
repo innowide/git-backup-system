@@ -7,3 +7,4 @@ repos/repos.json
 repos/repos.conf
 repos/repos.conf~
 repos.conf
+src/.env~

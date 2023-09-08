@@ -6,17 +6,26 @@ A small backup system for github repositories using a user token.
 
 This program uses docker engine version 3 to run.
 
-- In the "src" folder, create and fill the ".env" file
+- In the "src" folder, create and fill the ".env" file or use the .env.sample file
+
+```bash
+cp .env.sample .env
+```
+
+or
 
 ```bash
 touch .env
 ```
+
+with the following content:
 
 ```txt
 GITHUB_USER=your_github_username
 GITHUB_TOKEN=your_github_token
 TARGET=/repos-backup # Do not touch this
 GITHUB_ORG=your_github_org (optional)
+SLACK_WEBHOOK=your_slack_webhook (optional)
 ```
 
 > :warning: The token must have the "repo" scope to be able to clone private repositories. You can create a token by following the following tutorial [here](https://docs.github.com/en/enterprise-server@3.6/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
@@ -71,6 +80,31 @@ docker compose down
 ```
 
 > :warning: The container will not stop if you don't stop it manually. The scipt will check everyday at midnight if there is a new commit to backup by pulling the repos
+
+## Update
+
+To update the tool, you need to:
+
+- Stop the container
+
+```bash
+docker compose down
+```
+
+- Pull the repo
+
+- Rebuild the container
+
+```bash
+docker compose up -d --build --force-recreate
+```
+
+## Slack notifications
+
+If you want to be notified when the backup is done, you can use slack.\
+To do so, you need to create a webhook using [incoming webhooks](https://innowideteam.slack.com/apps/A0F7XDUAZ-incoming-webhooks).
+
+- Get the webhook url and put it in the ".env" file
 
 ## Some data
 
