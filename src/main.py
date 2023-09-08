@@ -40,40 +40,38 @@ class repo_backup:
         """
         Backs up the repo.
         """
-        os.chdir(root_dir)
-        if os.path.isdir(target + "/" + self.name):
-            print("\nPulling {}...".format(self.name), end="")
+        os.chdir(root_dir) # Ensure we are in the root directory
+        if os.path.isdir(target + "/" + self.name): # Check if the repo is already cloned
+            print("\nPulling {}...".format(self.name), end="") # Pull the repo
             os.chdir(target + "/" + self.name)
             error = subprocess.run(["git", "pull"]).returncode
         else:
-            print("Cloning {}...".format(self.name), end="")
+            print("Cloning {}...".format(self.name), end="") # Clone the repo
             os.chdir(target)
             error = subprocess.run(["git", "clone", self.cloneUrl.replace("https://", "https://{}@".format(token)) , self.name]).returncode
-            if error != 0:
+
+            if error != 0: # Check if the repo was cloned successfully
                 pass
             else:
                 os.chdir(self.name)
 
-        if error != 0:
+        if error != 0: # Set error and skip the rest of the backup opetations if there was an error
             self.hasError = True
             self.error = error
             print("Error")
             print("Error backing up {}".format(self.name))
             return
-        elif self.hasError:
+        elif self.hasError: # Reset the error if there was no error this time
             self.hasError = False
             self.error = None
         print('Done')
 
-        new_hash = subprocess.getoutput("git rev-parse HEAD")
+        new_hash = subprocess.getoutput("git rev-parse HEAD") # Update or construct the commit information
         self.lastPull = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         print("Repo last pull:", self.lastPull)
-        if new_hash != self.commitHash:
-            print("Commit hash" + new_hash)
-            self.commitHash = new_hash + ""
-            self.lastCommit = subprocess.getoutput("git log -1 --format=%cd")
-        else:
-            print("Commit hash:", self.commitHash)
+        print("Commit hash" + new_hash)
+        self.commitHash = new_hash
+        self.lastCommit = subprocess.getoutput("git log -1 --format=%cd")
 
 class backupdata:
     """
@@ -96,7 +94,7 @@ class backupdata:
         for repo in self.repos:
             self.repos[repo].backup(self.root_dir, self.target, self.github_token)
         os.chdir(self.target)
-    
+
     def loadJson(self, path: str = 'repos.json'):
         """
         Loads the backup data from a JSON file.
@@ -122,14 +120,14 @@ class backupdata:
         })
 
 if __name__ == "__main__":
-    user = os.getenv("GITHUB_USER")
+    user = os.getenv("GITHUB_USER") # Load the environment variables from .env
     org = os.getenv("GITHUB_ORG")
     token = os.getenv("GITHUB_TOKEN")
     target = os.getenv("TARGET")
-    
-    repos = backupdata(user, org, token, target)
-    
+
     while True:
+        repos = backupdata(user, org, token, target) # Create/Recreate the backupdata object
+
         if os.path.exists(target + "/repos.conf"):
             with open(target + "/repos.conf", 'r') as f:
                 repos_conf = f.readlines()
@@ -137,7 +135,7 @@ if __name__ == "__main__":
             time.sleep(1) # Prevents the script from using too much CPU
             raise Exception("No repos config found!")
 
-        for repo in repos_conf:
+        for repo in repos_conf: # Check & load the repos from the config
             repo = repo.split(' ')
             if len(repo) != 2:
                 raise Exception("Invalid repos config!")
@@ -145,14 +143,15 @@ if __name__ == "__main__":
                 repos.repos[repo[0]] = repo_backup(repo[0])
                 repos.repos[repo[0]].cloneUrl = repo[1].strip()
 
-        now = datetime.now()
+        now = datetime.now() # Backup the repos
         repos.backup()
         print("Backup finished in {} seconds.".format((datetime.now() - now).seconds))
 
-        with open(target + "/repos.json", 'w+') as f:
+        with open(target + "/repos.json", 'w+') as f: # Save the backup json data
             f.write(repos.json)
         print("Backup data saved to repos.json")
-        print("Next backup at midnight...")
+
+        print("Next backup at midnight...") # Wait until midnight
         midnight = datetime(now.year, now.month, now.day, 0, 0, 0) + timedelta(days=1)
         now = datetime.now()
         print("Going to sleep for {} seconds...".format((midnight - now).seconds))
