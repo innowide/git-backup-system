@@ -1,10 +1,11 @@
 version: '3'
 services:
   backupper:
+    restart: always
     build: .
     stdin_open: true # docker run -i
     tty: true        # docker run -t
     volumes:
-      - /home/maniko/delivery/backup-system/repos:/repos-backup
+      - ./repos:/repos-backup
 volumes:
   repos-backup:
