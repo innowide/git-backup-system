@@ -75,7 +75,7 @@ docker compose down
 ## Some data
 
 To see directly or notify once the backup is done, you can use the "repos.json" file generated in the mounted directory.\
-It contains all the information needed to see the last pull date, most recent commit hash, error if one occured, etc...\
+It contains all the information needed to see the last pull date, most recent commit hash, error if one occured, etc...
 
 > :warning: The file is updated only when the backup is done, so if you want to see the current status of the backup, you can check the logs of the container.
 
