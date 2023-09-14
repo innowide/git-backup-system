@@ -141,6 +141,7 @@ if __name__ == "__main__":
     token = os.getenv("GITHUB_TOKEN")
     target = os.getenv("TARGET")
     slack_webhook = os.getenv("SLACK_WEBHOOK")
+    max_tries = int(os.getenv("RETRY_COUNT"))
 
     use_slack = False
 
@@ -200,7 +201,9 @@ if __name__ == "__main__":
                     text += "> :white_check_mark: Successfully backed up {}.\n".format(repo)
             requests.post(slack_webhook, json={"text": text})
 
-        while len(repos.failed_repos) > 0: # Backup the failed repos
+        tries = 0
+        while len(repos.failed_repos) > 0 and tries >= max_tries: # Backup the failed repos
+            max_tries += 1
             print("Backing up failed repos...")
             repos.backup_failed()
             if use_slack: # Send slack backup end message
