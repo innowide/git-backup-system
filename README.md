@@ -23,9 +23,12 @@ with the following content:
 ```txt
 GITHUB_USER=your_github_username
 GITHUB_TOKEN=your_github_token
-TARGET=/repos-backup # Do not touch this
-GITHUB_ORG=your_github_org (optional)
-SLACK_WEBHOOK=your_slack_webhook (optional)
+TARGET=/repos-backup             # Do not touch this
+GITHUB_ORG=your_github_org       # optional
+SLACK_WEBHOOK=your_slack_webhook # optional
+ERROR_RETRY=True                 # optional
+RETRY_COUNT=3                    # optional
+RETRY_DELAY=1800                 # optional
 ```
 
 > :warning: The token must have the "repo" scope to be able to clone private repositories. You can create a token by following the following tutorial [here](https://docs.github.com/en/enterprise-server@3.6/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
