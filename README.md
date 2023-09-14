@@ -88,9 +88,9 @@ If the backup fails on some repos, by default, the script will retry once 30 min
 You can configure how many times the script will retry and the delay between each retry by changing the following variables in the ".env" file:
 
 ```txt
-RETRY=True
-RETRY_COUNT=2
-RETRY_DELAY=1800
+ERROR_RETRY=True
+RETRY_COUNT=3
+RETRY_DELAY=10
 ```
 
 ## Update
