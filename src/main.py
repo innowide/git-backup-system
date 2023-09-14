@@ -85,6 +85,7 @@ class backupdata:
         self.target = target
         self.repos = {}
         self.root_dir = root_dir
+        self.failed_repos = []
 
     def backup(self):
         """
@@ -94,7 +95,21 @@ class backupdata:
             os.mkdir(self.target)
         for repo in self.repos:
             self.repos[repo].backup(self.root_dir, self.target, self.github_token)
+            if self.repos[repo].hasError:
+                self.failed_repos.append(repo)
+
         os.chdir(self.target)
+
+    def backup_failed(self):
+        """
+        Backs up the failed repositories.
+        """
+        failed_repos = []
+        for repo in self.failed_repos:
+            self.repos[repo].backup(self.root_dir, self.target, self.github_token)
+            if self.repos[repo].hasError:
+                failed_repos.append(repo)
+        self.failed_repos = failed_repos
 
     def loadJson(self, path: str = 'repos.json'):
         """
@@ -126,6 +141,10 @@ if __name__ == "__main__":
     token = os.getenv("GITHUB_TOKEN")
     target = os.getenv("TARGET")
     slack_webhook = os.getenv("SLACK_WEBHOOK")
+    max_tries = int(os.getenv("RETRY_COUNT"))
+    retry_delay = int(os.getenv("RETRY_DELAY"))
+    error_retry = os.getenv("ERROR_RETRY")
+    print("Retry on error:", error_retry)
 
     use_slack = False
 
@@ -143,7 +162,6 @@ if __name__ == "__main__":
     if not user:
         time.sleep(1) # Prevents the script from using too much CPU
         raise Exception("No github user found!")
-
 
     while True:
         repos = backupdata(user, org, token, target) # Create/Recreate the backupdata object
@@ -172,9 +190,6 @@ if __name__ == "__main__":
         time_elapsed = (datetime.now() - now).seconds
         print("Backup finished in {} seconds.".format(time_elapsed))
 
-        with open(target + "/repos.json", 'w+') as f: # Save the backup json data
-            f.write(repos.json)
-        print("Backup data saved to repos.json")
 
         if use_slack: # Send slack backup end message
             print("Sending slack checkup message...")
@@ -186,6 +201,33 @@ if __name__ == "__main__":
                     text += "> :white_check_mark: Successfully backed up {}.\n".format(repo)
             requests.post(slack_webhook, json={"text": text})
 
+        if error_retry == "True":
+            tries = 0
+            while len(repos.failed_repos) > 0 and tries < max_tries: # Backup the failed repos
+                tries += 1
+                print("Retry in " + str(retry_delay) + " seconds...")
+                time.sleep(retry_delay)
+                print("Backing up failed repos...")
+                now = datetime.now()
+                repos.backup_failed()
+                time_elapsed = (datetime.now() - now).seconds
+                if use_slack: # Send slack backup end message
+                    print("Sending slack checkup message...")
+                    text = "*Failed repos backup try finished in {} seconds.*\n".format(time_elapsed)
+                    if len(repos.failed_repos) == 0:
+                        do_sleep = False
+                        text += "> :white_check_mark: Successfully backed up all failed repos.\n"
+                    else:
+                        do_sleep = True
+                        for repo in repos.repos:
+                            if repos.repos[repo].hasError:
+                                text += "> :x: Error backing up {}: {}\n".format(repo, repos.repos[repo].error)
+                    requests.post(slack_webhook, json={"text": text})
+
+        print("Saving backup data to" + target + "/repos.json")
+        with open(target + "/repos.json", 'w+') as f: # Save the backup json data
+            f.write(repos.json)
+        print("Backup data saved to repos.json")
         print("Next backup at midnight...") # Wait until midnight
         midnight = datetime(now.year, now.month, now.day, 0, 0, 0) + timedelta(days=1)
         now = datetime.now()

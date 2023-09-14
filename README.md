@@ -81,6 +81,18 @@ docker compose down
 
 > :warning: The container will not stop if you don't stop it manually. The scipt will check everyday at midnight if there is a new commit to backup by pulling the repos
 
+## Error and retry
+
+If the backup fails on some repos, by default, the script will retry once 30 minutes later.\
+
+You can configure how many times the script will retry and the delay between each retry by changing the following variables in the ".env" file:
+
+```txt
+ERROR_RETRY=True
+RETRY_COUNT=3
+RETRY_DELAY=10
+```
+
 ## Update
 
 To update the tool, you need to:
