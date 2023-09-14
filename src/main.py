@@ -8,8 +8,6 @@ from dotenv import load_dotenv
 import time
 import requests
 
-load_dotenv()
-
 class repo_backup:
     """
     A class to represent a GitHub repository.
@@ -136,6 +134,8 @@ class backupdata:
         })
 
 if __name__ == "__main__":
+    load_dotenv()
+
     user = os.getenv("GITHUB_USER") # Load the environment variables from .env
     org = os.getenv("GITHUB_ORG")
     token = os.getenv("GITHUB_TOKEN")
