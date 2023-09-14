@@ -144,7 +144,6 @@ if __name__ == "__main__":
     max_tries = int(os.getenv("RETRY_COUNT"))
     retry_delay = int(os.getenv("RETRY_DELAY"))
     error_retry = os.getenv("ERROR_RETRY")
-    print("Retry on error:", error_retry)
 
     use_slack = False
 
