@@ -205,10 +205,13 @@ if __name__ == "__main__":
             repos.backup_failed()
             if use_slack: # Send slack backup end message
                 print("Sending slack checkup message...")
-                text = "*Failed repos backup finished in {} seconds.*\n".format(time_elapsed)
-                for repo in repos.repos:
-                    if repos.repos[repo].hasError:
-                        text += "> :x: Error backing up {}: {}\n".format(repo, repos.repos[repo].error)
+                text = "*Failed repos backup try finished in {} seconds.*\n".format(time_elapsed)
+                if len(repos.failed_repos) == 0:
+                    text += "> :white_check_mark: Successfully backed up all failed repos.\n"
+                else:
+                    for repo in repos.repos:
+                        if repos.repos[repo].hasError:
+                            text += "> :x: Error backing up {}: {}\n".format(repo, repos.repos[repo].error)
                 requests.post(slack_webhook, json={"text": text})
 
         print("Next backup at midnight...") # Wait until midnight
