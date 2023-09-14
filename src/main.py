@@ -143,6 +143,8 @@ if __name__ == "__main__":
     slack_webhook = os.getenv("SLACK_WEBHOOK")
     max_tries = int(os.getenv("RETRY_COUNT"))
     retry_delay = int(os.getenv("RETRY_DELAY"))
+    error_retry = os.getenv("ERROR_RETRY")
+    print("Retry on error:", error_retry)
 
     use_slack = False
 
@@ -199,27 +201,28 @@ if __name__ == "__main__":
                     text += "> :white_check_mark: Successfully backed up {}.\n".format(repo)
             requests.post(slack_webhook, json={"text": text})
 
-        tries = 0
-        while len(repos.failed_repos) > 0 and tries < max_tries: # Backup the failed repos
-            tries += 1
-            print("Retry in " + str(retry_delay) + " seconds...")
-            time.sleep(retry_delay)
-            print("Backing up failed repos...")
-            now = datetime.now()
-            repos.backup_failed()
-            time_elapsed = (datetime.now() - now).seconds
-            if use_slack: # Send slack backup end message
-                print("Sending slack checkup message...")
-                text = "*Failed repos backup try finished in {} seconds.*\n".format(time_elapsed)
-                if len(repos.failed_repos) == 0:
-                    do_sleep = False
-                    text += "> :white_check_mark: Successfully backed up all failed repos.\n"
-                else:
-                    do_sleep = True
-                    for repo in repos.repos:
-                        if repos.repos[repo].hasError:
-                            text += "> :x: Error backing up {}: {}\n".format(repo, repos.repos[repo].error)
-                requests.post(slack_webhook, json={"text": text})
+        if error_retry == "True":
+            tries = 0
+            while len(repos.failed_repos) > 0 and tries < max_tries: # Backup the failed repos
+                tries += 1
+                print("Retry in " + str(retry_delay) + " seconds...")
+                time.sleep(retry_delay)
+                print("Backing up failed repos...")
+                now = datetime.now()
+                repos.backup_failed()
+                time_elapsed = (datetime.now() - now).seconds
+                if use_slack: # Send slack backup end message
+                    print("Sending slack checkup message...")
+                    text = "*Failed repos backup try finished in {} seconds.*\n".format(time_elapsed)
+                    if len(repos.failed_repos) == 0:
+                        do_sleep = False
+                        text += "> :white_check_mark: Successfully backed up all failed repos.\n"
+                    else:
+                        do_sleep = True
+                        for repo in repos.repos:
+                            if repos.repos[repo].hasError:
+                                text += "> :x: Error backing up {}: {}\n".format(repo, repos.repos[repo].error)
+                    requests.post(slack_webhook, json={"text": text})
 
         print("Saving backup data to" + target + "/repos.json")
         with open(target + "/repos.json", 'w+') as f: # Save the backup json data
