@@ -85,6 +85,7 @@ class backupdata:
         self.target = target
         self.repos = {}
         self.root_dir = root_dir
+        self.failed_repos = []
 
     def backup(self):
         """
@@ -94,7 +95,21 @@ class backupdata:
             os.mkdir(self.target)
         for repo in self.repos:
             self.repos[repo].backup(self.root_dir, self.target, self.github_token)
+            if self.repos[repo].hasError:
+                self.failed_repos.append(repo)
+
         os.chdir(self.target)
+
+    def backup_failed(self):
+        """
+        Backs up the failed repositories.
+        """
+        failed_repos = []
+        for repo in self.failed_repos:
+            self.repos[repo].backup(self.root_dir, self.target, self.github_token)
+            if self.repos[repo].hasError:
+                failed_repos.append(repo)
+        self.failed_repos = failed_repos
 
     def loadJson(self, path: str = 'repos.json'):
         """
@@ -144,7 +159,6 @@ if __name__ == "__main__":
         time.sleep(1) # Prevents the script from using too much CPU
         raise Exception("No github user found!")
 
-
     while True:
         repos = backupdata(user, org, token, target) # Create/Recreate the backupdata object
 
@@ -185,6 +199,17 @@ if __name__ == "__main__":
                 else:
                     text += "> :white_check_mark: Successfully backed up {}.\n".format(repo)
             requests.post(slack_webhook, json={"text": text})
+
+        while len(repos.failed_repos) > 0: # Backup the failed repos
+            print("Backing up failed repos...")
+            repos.backup_failed()
+            if use_slack: # Send slack backup end message
+                print("Sending slack checkup message...")
+                text = "*Failed repos backup finished in {} seconds.*\n".format(time_elapsed)
+                for repo in repos.repos:
+                    if repos.repos[repo].hasError:
+                        text += "> :x: Error backing up {}: {}\n".format(repo, repos.repos[repo].error)
+                requests.post(slack_webhook, json={"text": text})
 
         print("Next backup at midnight...") # Wait until midnight
         midnight = datetime(now.year, now.month, now.day, 0, 0, 0) + timedelta(days=1)
